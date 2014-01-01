@@ -109,7 +109,7 @@ class PageQuery {
         // now render the pagequery list
         foreach ($sorted_results as $line) {
 
-            list($level, $name, $id, $_, $abstract, $display) = $line;
+            list($level, $name, $id, $_, $abstract, $display, $thumbnail) = $line;
 
             $heading = '';
             $is_heading = ($level > 0);
@@ -156,7 +156,7 @@ class PageQuery {
                     $heading = $this->_proper($heading);
                 }
                 if ( ! empty($id)) {
-                    $heading = $this->_html_wikilink($id, $heading, '', $opt, false, true);
+                    $heading = $this->_html_wikilink($id, $heading, '', $thumbnail, $opt, false, true);
                 }
                 $render .= '<h' . $level . ' style="' . $indent_style . '">' . $heading . '</h' . $level . '>' . DOKU_LF;
                 $prev_was_heading = true;
@@ -170,7 +170,7 @@ class PageQuery {
                 if ($opt['proper'] == 'name' || $opt['proper'] == 'both') {
                     $display = $this->_proper($display);
                 }
-                $link = $this->_html_wikilink($id, $display, $abstract, $opt);
+                $link = $this->_html_wikilink($id, $display, $abstract, $thumbnail, $opt);
                 $render .= $link;
                 $prev_was_heading = false;
             }
@@ -247,7 +247,7 @@ class PageQuery {
         $pagequery = '';
         foreach ($sorted_results as $line) {
 
-            list($level, $name, $id, $_, $abstract, $display) = $line;
+            list($level, $name, $id, $_, $abstract, $display, $thumbnail) = $line;
 
             $is_heading = ($level > 0);
             $heading = ($is_heading) ? $name : '';
@@ -270,7 +270,7 @@ class PageQuery {
                     $heading = $this->_proper($heading);
                 }
                 if ( ! empty($id)) {
-                    $heading = $this->_html_wikilink($id, $heading, '', $opt, false, true);
+                    $heading = $this->_html_wikilink($id, $heading, '', $thumbnail, $opt, false, true);
                 }
                 $pagequery .= '<h' . $level . ' style="' . $indent_style . '">' . $heading . '</h' . $level . '>' . DOKU_LF;
                 $prev_was_heading = true;
@@ -285,7 +285,7 @@ class PageQuery {
                 if ($opt['proper'] == 'name' || $opt['proper'] == 'both') {
                     $display = $this->_proper($display);
                 }
-                $link = $this->_html_wikilink($id, $display, $abstract, $opt);
+                $link = $this->_html_wikilink($id, $display, $abstract, $thumbnail, $opt);
                 $pagequery .= $link;
                 $prev_was_heading = false;
             }
@@ -312,7 +312,7 @@ class PageQuery {
      * @param bool $raw => non-formatted (no html)
      * @return string
      */
-    private function _html_wikilink($id, $display,  $abstract, $opt, $track_snippets = true, $raw = false) {
+    private function _html_wikilink($id, $display, $abstract, $thumbnail, $opt, $track_snippets = true, $raw = false) {
         static $snippet_cnt = 0;
 
         if ($track_snippets) {
@@ -324,9 +324,23 @@ class PageQuery {
         $type = $opt['snippet']['type'];
         $inline = '';
         $after = '';
+		$thumbnail_html = '';
 
         $count = $opt['snippet']['count'];
         $skip_snippet = ($count > 0 && $snippet_cnt >= $count);
+		
+		if ( !empty( $thumbnail ) ) {
+			$thumbnail_data = array(
+				'src' 		=> $thumbnail,
+				'title'		=> $id,
+				'align'		=> $opt['thumbnail']['align'],
+				'width'		=> $opt['thumbnail']['width'],
+				'height'	=> $opt['thumbnail']['height'],
+				'cache'		=> 'cache',
+				'type'		=> 'internalmedia'
+			);
+			$thumbnail_html = html_wikilink($id, $thumbnail_data);
+		}
 
         if ($type == 'tooltip') {
             $tooltip = str_replace("\n\n", "\n", $abstract);
@@ -353,7 +367,7 @@ class PageQuery {
         if ($raw) {
             $wikilink = $link . $inline;
         } else {
-            $wikilink = '<li class="' . $border . '">' . $link . $inline . DOKU_LF . $after . '</li>';
+            $wikilink = '<li class="' . $border . '">' . $thumbnail_html . $link . $inline . DOKU_LF . $after . '</li>';
         }
         return $wikilink;
     }
@@ -649,6 +663,13 @@ class PageQuery {
                 $display = $row['name'];
             }
             $row['display'] = $display;
+			
+			// Get the first image for the thumbnail, but only if it's a local file
+			if ( isset( $meta['relation']['firstimage'] ) ) {
+				if ( !strpos( $meta['relation']['firstimage'], '://' ) ) {
+					$row['thumbnail'] = $meta['relation']['firstimage'];	
+				}
+			}
 
             $cnt++;
         }

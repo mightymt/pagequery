@@ -91,6 +91,7 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
         $opt['sort']      = array();    // sort by various headings
         $opt['spelldate'] = false;      // spell out date headings in words where possible
         $opt['underline'] = false;      // faint underline below each link for clarity
+        $opt['thumbnail'] = array('width' => null, 'heigth' => null, 'align' => ''); // first image in page
 
         foreach ($params as $param) {
             list($option, $value) = explode('=', $param);
@@ -218,6 +219,36 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
                         $opt['fontsize'] = $value;
                     }
                     break;
+				case 'thumbnail':
+					if ( !empty( $value ) ) {
+						// Determine image alignment
+						if ( substr( $value, 0, 1 ) == ' ' && substr( $value, -1, 1 ) == ' ' ) {
+							$opt['thumbnail']['align'] = 'center';
+						}
+						elseif ( substr( $value, 0, 1 ) == ' ' ) {
+							$opt['thumbnail']['align'] = 'right';
+						}
+						elseif ( substr( $value, -1, 1 ) == ' ' ) {
+							$opt['thumbnail']['align'] = 'left';
+						}
+						
+						$thumb_size = explode( 'x', strtolower( $value ) );
+						$thumb_size = array_map( 'intval', $thumb_size );
+						// Check if a valid image width was given
+						if ( $thumb_size[0] > 0 ) {
+							$opt['thumbnail']['width'] = $thumb_size[0];
+						}
+						// Check if a valid image height was given
+						if ( isset( $thumb_size[1] ) ) {
+							if ( $thumb_size[1] > 0 ) {
+								$opt['thumbnail']['height'] = $thumb_size[1];
+							}
+						}						
+					}
+					else {
+						$opt['thumbnail']['width'] = 100;
+					}
+					break;
             }
         }
         return $opt;
@@ -306,7 +337,7 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
                 $count = count($sort_array);
 
                 // and finally the grouping
-                $keys = array('name', 'id', 'title', 'abstract', 'display');
+                $keys = array('name', 'id', 'title', 'abstract', 'display', 'thumbnail');
                 if ( ! $opt['group']) $group_opts = array();
                 $sorted_results = $pq->mgroup($sort_array, $keys, $group_opts);
 
