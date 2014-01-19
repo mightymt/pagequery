@@ -91,7 +91,7 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
         $opt['sort']      = array();    // sort by various headings
         $opt['spelldate'] = false;      // spell out date headings in words where possible
         $opt['underline'] = false;      // faint underline below each link for clarity
-        $opt['thumbnail'] = array('width' => null, 'heigth' => null, 'align' => ''); // first image in page
+        $opt['thumbnail'] = array( 'width' => 100, 'heigth' => null, 'align' => '' ); // first image in page
 
         foreach ($params as $param) {
             list($option, $value) = explode('=', $param);
@@ -220,38 +220,34 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
                     }
                     break;
 				case 'thumbnail':
-					if ( !empty( $value ) ) {
-						$thumb_details = explode( ',', strtolower( $value ) );
-						foreach ( $thumb_details as $thumb_detail ) {
-							// Determine image size (width and height are given)
-							if ( strpos( $thumb_detail, 'x' ) ) {
-								$thumb_size = explode( 'x', $thumb_detail );
-								$thumb_size = array_map( 'intval', $thumb_size );
-								if ( $thumb_size[0] > 0 ) {
-									$opt['thumbnail']['width'] = $thumb_size[0];
-								}
-								if ( $thumb_size[1] > 0 ) {
-									$opt['thumbnail']['height'] = $thumb_size[1];
-								}
+					$thumb_details = explode( ',', strtolower( $value ) );
+					$thumb_details = array_slice( $thumb_details, 0, 2 ); // Allow a maximum of 2 arguments
+					$thumb_details = array_map( 'trim', $thumb_details );
+					foreach ( $thumb_details as $thumb_detail ) {
+						// Allow for full size images
+						if ( $thumb_detail == '0' || $thumb_detail == '0x0' ) {
+							$opt['thumbnail']['height'] = null;
+							$opt['thumbnail']['width'] = null;
+						}
+						// Determine image size (both width and height are given)
+						elseif ( strpos( $thumb_detail, 'x' ) ) {
+							$thumb_size = explode( 'x', $thumb_detail );
+							$thumb_size = array_map( 'intval', $thumb_size );
+							if ( $thumb_size[0] > 0 ) {
+								$opt['thumbnail']['width'] = $thumb_size[0];
 							}
-							// Determine image size (only width is given)
-							elseif ( is_numeric( $thumb_detail ) && intval( $thumb_detail ) > 0 ) {
-								$opt['thumbnail']['width'] = intval( $thumb_detail );
-							}
-							// Determine image alignment
-							elseif ( in_array( $thumb_detail, array( '', 'center', 'left', 'right' ) ) ) {
-								$opt['thumbnail']['align'] = $thumb_detail;
+							if ( $thumb_size[1] > 0 ) {
+								$opt['thumbnail']['height'] = $thumb_size[1];
 							}
 						}
-						
-						// If no image size was given by the user, set the width to default
-						if ( is_null( $opt['thumbnail']['width'] ) ) {
-							$opt['thumbnail']['width'] = 100;
+						// Determine image size (only width is given)
+						elseif ( is_numeric( $thumb_detail ) && intval( $thumb_detail ) > 0 ) {
+							$opt['thumbnail']['width'] = intval( $thumb_detail );
 						}
-					}
-					else {
-						// Default thumbnail size, when nothing else is given
-						$opt['thumbnail']['width'] = 100;
+						// Determine image alignment
+						elseif ( in_array( $thumb_detail, array( 'center', 'left', 'right' ) ) ) {
+							$opt['thumbnail']['align'] = $thumb_detail;
+						}
 					}
 					break;
             }

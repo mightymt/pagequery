@@ -313,7 +313,8 @@ class PageQuery {
      * @return string
      */
     private function _html_wikilink($id, $display, $abstract, $thumbnail, $opt, $track_snippets = true, $raw = false) {
-        static $snippet_cnt = 0;
+		global $INFO;
+	    static $snippet_cnt = 0;
 
         if ($track_snippets) {
             $snippet_cnt++;
@@ -324,22 +325,27 @@ class PageQuery {
         $type = $opt['snippet']['type'];
         $inline = '';
         $after = '';
-		$thumbnail_html = '';
+        $thumbnail_html = '';
 
         $count = $opt['snippet']['count'];
         $skip_snippet = ($count > 0 && $snippet_cnt >= $count);
-		
+
 		if ( !empty( $thumbnail ) ) {
+			// Build the array of necessary data
 			$thumbnail_data = array(
-				'src' 		=> $thumbnail,
-				'title'		=> $id,
-				'align'		=> $opt['thumbnail']['align'],
-				'width'		=> $opt['thumbnail']['width'],
-				'height'	=> $opt['thumbnail']['height'],
-				'cache'		=> 'cache',
-				'type'		=> 'internalmedia'
+				'src'     => $thumbnail,
+				'title'   => $id,
+				'align'   => $opt['thumbnail']['align'],
+				'width'   => $opt['thumbnail']['width'],
+				'height'  => $opt['thumbnail']['height'],
+				'cache'   => 'cache',
 			);
-			$thumbnail_html = html_wikilink($id, $thumbnail_data);
+			// Check if we are dealing with an internal image
+			if ( !media_isexternal( $thumbnail ) ) {
+				$thumbnail_data['type'] = 'internalmedia';
+			}
+			// Get the link and image
+			$thumbnail_html = html_wikilink( $id, $thumbnail_data );
 		}
 
         if ($type == 'tooltip') {
@@ -364,6 +370,9 @@ class PageQuery {
         }
 
         $border = ($opt['underline']) ? 'border' : '';
+		if ( $id == $INFO['id'] ) {
+			$border .= ' current';
+		}
         if ($raw) {
             $wikilink = $link . $inline;
         } else {
@@ -663,12 +672,10 @@ class PageQuery {
                 $display = $row['name'];
             }
             $row['display'] = $display;
-			
-			// Get the first image for the thumbnail, but only if it's a local file
+
+			// Get the page's first image, if available
 			if ( isset( $meta['relation']['firstimage'] ) ) {
-				if ( !strpos( $meta['relation']['firstimage'], '://' ) ) {
-					$row['thumbnail'] = $meta['relation']['firstimage'];	
-				}
+				$row['thumbnail'] = $meta['relation']['firstimage'];
 			}
 
             $cnt++;
