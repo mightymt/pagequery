@@ -499,6 +499,9 @@ class PageQuery {
             // getting metadata is very time-consuming, hence ONCE per displayed row
             $meta = p_get_metadata($id, '', METADATA_DONT_RENDER);
 
+            if ( ! isset($meta['date']['created'])) {
+                $meta['date']['created'] = 0;
+            }
             if ( ! isset($meta['date']['modified'])) {
                 $meta['date']['modified'] = $meta['date']['created'];
             }
