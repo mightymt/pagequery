@@ -91,7 +91,7 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
         $opt['sort']      = array();    // sort by various headings
         $opt['spelldate'] = false;      // spell out date headings in words where possible
         $opt['underline'] = false;      // faint underline below each link for clarity
-        $opt['thumbnail'] = array( 'width' => 100, 'heigth' => null, 'align' => '' ); // first image in page
+        $opt['thumbnail'] = array();    // first image in page
 
         foreach ($params as $param) {
             list($option, $value) = explode('=', $param);
@@ -220,6 +220,9 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
                     }
                     break;
 				case 'thumbnail':
+					// Set defaults here
+					$opt['thumbnail'] = array( 'width' => 100, 'heigth' => null, 'align' => '' );
+					
 					$thumb_details = explode( ',', strtolower( $value ) );
 					$thumb_details = array_slice( $thumb_details, 0, 2 ); // Allow a maximum of 2 arguments
 					$thumb_details = array_map( 'trim', $thumb_details );

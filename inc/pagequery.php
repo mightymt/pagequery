@@ -330,7 +330,7 @@ class PageQuery {
         $count = $opt['snippet']['count'];
         $skip_snippet = ($count > 0 && $snippet_cnt >= $count);
 
-		if ( !empty( $thumbnail ) ) {
+		if ( !empty( $thumbnail ) && !empty( $opt[ 'thumbnail' ] ) ) {
 			// Build the array of necessary data
 			$thumbnail_data = array(
 				'src'     => $thumbnail,
