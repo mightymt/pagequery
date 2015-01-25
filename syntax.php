@@ -55,7 +55,7 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
      *
      * @link https://www.dokuwiki.org/plugin:pagequery See PageQuery page for full details
      */
-    function handle($match, $state, $pos, &$handler) {
+    function handle($match, $state, $pos, Doku_Handler $handler) {
 
         $opt = array();
         $match = substr($match, 12, -2); // strip markup "{{pagequery>...}}"
@@ -91,10 +91,11 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
         $opt['sort']      = array();    // sort by various headings
         $opt['spelldate'] = false;      // spell out date headings in words where possible
         $opt['underline'] = false;      // faint underline below each link for clarity
+        $opt['nstitle']   = false;      // internal use currently...
         $opt['thumbnail'] = array();    // first image in page
 
         foreach ($params as $param) {
-            list($option, $value) = explode('=', $param);
+            list($option, $value) = $this->_keyvalue($param, '=');
             switch ($option) {
                 case 'casesort':
 				case 'fullregex':
@@ -117,7 +118,7 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
                 case 'filter':
                     $fields = explode(',', $value);
                     foreach ($fields as $field) {
-                        list($key, $expr) = explode(':', $field, 2);
+                        list($key, $expr) = $this->_keyvalue($field);
                         // allow for a few common naming differences
                         switch ($key) {
                             case 'pagename':
@@ -199,6 +200,7 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
                         case 'heading':
                         case 'firstheading':
                             $opt['display'] = 'title';
+                            $opt['nstitle'] = true;
                             break;
                         case 'pageid':
                         case 'id':
@@ -206,6 +208,9 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
                             break;
                         default:
                             $opt['display'] = $value;
+                    }
+                    if (preg_match('/\{(title|heading|firstheading)\}/', $value)) {
+                        $opt['nstitle'] = true;
                     }
                     break;
                 case 'layout':
@@ -256,10 +261,10 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
             }
         }
         return $opt;
-	}
+    }
 
 
-    function render($mode, &$renderer, $opt) {
+    function render($mode, Doku_Renderer $renderer, $opt) {
 
         if ( ! PHP_MAJOR_VERSION >= 5 && ! PHP_MINOR_VERSION >= 3) {
             $renderer->doc .= "You must have PHP 5.3 or greater to use this pagequery plugin.  Please upgrade PHP or use an older version of the plugin";
@@ -278,6 +283,7 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
             'no_results'   => $this->getLang('no_results')
         );
         $pq = new PageQuery($lang);
+
         $query = $opt['query'];
 
         if ($mode == 'xhtml') {
@@ -358,6 +364,21 @@ class syntax_plugin_pagequery extends DokuWiki_Syntax_Plugin {
         } else {
             return false;
         }
+    }
+
+
+    /**
+     * Split a string into key => value parts.
+     *
+     * @param string $str
+     * @param string $delim
+     * @return array
+     */
+    private function _keyvalue($str, $delim = ':') {
+        $parts = explode($delim, $str);
+        $key = isset($parts[0]) ? $parts[0] : '';
+        $value = isset($parts[1]) ? $parts[1] : '';
+        return array($key, $value);
     }
 }
 
